@@ -2460,7 +2460,7 @@ Pellentesque facilisi consequat lacinia quis nunc ligula hac viverra ultricies. 
 Metus est facilisi; nunc congue arcu adipiscing. Gravida diam feugiat molestie vel habitant natoque consequat. Nec nisl amet mi sapien id conubia litora. Dignissim luctus ornare praesent parturient, per erat orci. Efficitur tincidunt faucibus hac aenean lacus finibus ornare vivamus aptent. Porttitor risus massa pretium faucibus vel amet non vulputate tortor.
 Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Penatibus aliquet fermentum inceptos aliquet dictum turpis finibus donec. Per nulla dis platea parturient donec scelerisque pretium. Amet magnis mauris vehicula posuere gravida, neque magnis. Placerat ultricies magna ridiculus convallis ullamcorper, libero bibendum hendrerit conubia. Suspendisse felis integer sed convallis netus sociosqu proin. Urna viverra sollicitudin est commodo elit tortor ante class. Mollis quisque vulputate risus accumsan, fringilla finibus class. Senectus congue nostra taciti blandit nam. Torquent odio mauris molestie nam sodales ex sapien.`;
 
-    //text = "Springtrap is the best animatronic";
+    text = "Springtrap is the best animatronic";
     let type = "caesar";
     let key = 13;
     console.log(`${type.toUpperCase()} Cipher`);
@@ -2540,13 +2540,16 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
     type = "vigenere";
 
     key = "springtrap";
-    console.log(text.length)
     console.log(`${type.toUpperCase()} Cipher`);
     console.time(`Encryption ${type}`);
     encrypted = await cipher.Encrypt(type,text,key);
    
     console.timeEnd(`Encryption ${type}`);
-    //console.log(encrypted)
-    console.log(encrypted.length);
+    console.log(encrypted)
+
+    console.time(`Decryption ${type}`);
+    decrypted = await cipher.Decrypt(type,encrypted,key);
+    console.timeEnd(`Decryption ${type}`);
+    console.log(decrypted);
     
 })();
