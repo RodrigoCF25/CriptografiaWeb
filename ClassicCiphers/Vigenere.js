@@ -1,7 +1,7 @@
 
-const Cipher = require('./Cipher');
+const Cipher = require('../Cipher');
 
-const {isAlphabetic } = require('./TextLib');
+const {isAlphabetic } = require('../TextLib');
 
 
 class Vigenere extends Cipher{

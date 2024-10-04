@@ -1,28 +1,34 @@
-const CaesarCipher = require('./CaesarCipher');
+const CaesarCipher = require('./ClassicCiphers/CaesarCipher');
 
-const SubstitutionCipher = require('./SubstitutionCipher');
+const SubstitutionCipher = require('./ClassicCiphers/SubstitutionCipher');
 
-const TranspositionCipher = require('./TranspositionCipher');
+const TranspositionCipher = require('./ClassicCiphers/TranspositionCipher');
 
-const Vigenere = require('./Vigenere');
+const Vigenere = require('./ClassicCiphers/Vigenere');
+
+const PlayfairCipher = require('./ClassicCiphers/PlayfairCipher');
+
+const HillCipher = require('./ClassicCiphers/HillCipher');
 
 class CipherMaster{
 
     constructor(){
         this.types = {
-            'caesar': new CaesarCipher(),
-            'substitution': new SubstitutionCipher(),
-            'transposition': new TranspositionCipher(),
-            'vigenere': new Vigenere()
+            'caesar': () => new CaesarCipher(),
+            'substitution': () => new SubstitutionCipher(),
+            'transposition': () => new TranspositionCipher(),
+            'vigenere': () => new Vigenere(),
+            'playfair': () => new PlayfairCipher(),
+            'hill': () => new HillCipher()
         };
     }
 
     async Encrypt(type,text,key){
-        return await this.types[type].Encrypt(text,key);
+        return await this.types[type]().Encrypt(text,key);
     }
 
     async Decrypt(type,text,key){
-        return await this.types[type].Decrypt(text,key);
+        return await this.types[type]().Decrypt(text,key);
     }
 
 
@@ -34,8 +40,9 @@ const cipher = new CipherMaster();
 
 (async () => {
     
+    let text = "Springtrap is the best animatronic";
     
-    let text = `Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam congue facilisi litora ridiculus primis. Netus metus potenti malesuada donec dapibus orci, sit proin. Enim rhoncus nisi fames potenti tristique phasellus natoque ad. Conubia torquent nunc curabitur nunc nisi condimentum. Nostra augue sociosqu nibh conubia arcu condimentum. Proin odio lacinia nascetur ante dapibus interdum a posuere lacinia?
+    text = `Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam congue facilisi litora ridiculus primis. Netus metus potenti malesuada donec dapibus orci, sit proin. Enim rhoncus nisi fames potenti tristique phasellus natoque ad. Conubia torquent nunc curabitur nunc nisi condimentum. Nostra augue sociosqu nibh conubia arcu condimentum. Proin odio lacinia nascetur ante dapibus interdum a posuere lacinia?
 Facilisi accumsan id senectus elit vivamus taciti scelerisque curae? Gravida id felis nisi nam lectus odio litora sed. Aliquet convallis dolor litora tempus natoque at. Nec nisi lacinia condimentum curabitur senectus inceptos. Leo sociosqu rhoncus risus magna ornare. Aliquet quis mauris pharetra lacus aliquam sed. Volutpat nam hendrerit molestie risus risus suspendisse. Nisl primis ac aliquet pharetra habitant.
 Purus quisque turpis ridiculus leo curabitur condimentum curabitur. Sollicitudin et lacinia nunc nulla dapibus curabitur congue pharetra. Curabitur morbi ullamcorper nulla vitae pellentesque. Dolor netus rhoncus potenti facilisis aliquet. Commodo sem praesent quisque leo himenaeos porttitor quis inceptos elit. Leo aenean magna curae urna dolor. Sit primis egestas vulputate penatibus neque suscipit. Maecenas pharetra fames porta eu facilisi gravida curae efficitur.
 Sapien dis tortor leo curae pharetra netus eleifend convallis mus? Faucibus scelerisque dis faucibus ac magna urna. Risus sagittis maecenas tincidunt porttitor sollicitudin bibendum magna id. Dictum tellus nullam penatibus vulputate suscipit senectus phasellus rutrum. Vestibulum dignissim auctor posuere odio; proin dolor parturient dis. Et metus consectetur dui tortor tristique tortor non ridiculus etiam. Vulputate nulla felis pretium sollicitudin proin rhoncus; hac magna placerat. Quisque proin fringilla pretium vitae, egestas tellus. Duis ullamcorper ipsum enim, metus senectus commodo quam sollicitudin pretium. Himenaeos in pretium torquent nisl molestie quis class dictum.
@@ -2460,7 +2467,9 @@ Pellentesque facilisi consequat lacinia quis nunc ligula hac viverra ultricies. 
 Metus est facilisi; nunc congue arcu adipiscing. Gravida diam feugiat molestie vel habitant natoque consequat. Nec nisl amet mi sapien id conubia litora. Dignissim luctus ornare praesent parturient, per erat orci. Efficitur tincidunt faucibus hac aenean lacus finibus ornare vivamus aptent. Porttitor risus massa pretium faucibus vel amet non vulputate tortor.
 Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Penatibus aliquet fermentum inceptos aliquet dictum turpis finibus donec. Per nulla dis platea parturient donec scelerisque pretium. Amet magnis mauris vehicula posuere gravida, neque magnis. Placerat ultricies magna ridiculus convallis ullamcorper, libero bibendum hendrerit conubia. Suspendisse felis integer sed convallis netus sociosqu proin. Urna viverra sollicitudin est commodo elit tortor ante class. Mollis quisque vulputate risus accumsan, fringilla finibus class. Senectus congue nostra taciti blandit nam. Torquent odio mauris molestie nam sodales ex sapien.`;
 
-    text = "Springtrap is the best animatronic";
+    
+    console.log(text.length);
+    text = "Springtrap is the best animatronico";
     let type = "caesar";
     let key = 13;
     console.log(`${type.toUpperCase()} Cipher`);
@@ -2543,13 +2552,60 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
     console.log(`${type.toUpperCase()} Cipher`);
     console.time(`Encryption ${type}`);
     encrypted = await cipher.Encrypt(type,text,key);
-   
     console.timeEnd(`Encryption ${type}`);
-    console.log(encrypted)
+    //console.log(encrypted);
 
     console.time(`Decryption ${type}`);
     decrypted = await cipher.Decrypt(type,encrypted,key);
     console.timeEnd(`Decryption ${type}`);
-    console.log(decrypted);
+    //console.log(decrypted);
+
+
+    console.log('-----------------------------------\n');
+
+    type = "playfair";
+
+    key = "springtrap";
+    console.log(`${type.toUpperCase()} Cipher`);
+    console.time(`Encryption ${type}`);
+    encrypted = await cipher.Encrypt(type,text,key);
+    console.timeEnd(`Encryption ${type}`);
+    //console.log(encrypted);
+
+
+    console.time(`Decryption ${type}`);
+    decrypted = await cipher.Decrypt(type,encrypted,key);
+    console.timeEnd(`Decryption ${type}`);
+    //console.log(decrypted);
+
+
+    //The length is lower because the playfair cipher removes spaces and special characters
+
+    console.log('-----------------------------------\n');
+
+
+    type = "hill";
+
+    key = [[17,17,5],[21,18,21],[2,2,19]];
+
+    console.log(`${type.toUpperCase()} Cipher`);
+
+    console.time(`Encryption ${type}`);
+    encrypted = await cipher.Encrypt(type,text,key);
+    console.timeEnd(`Encryption ${type}`);
+    
+    //console.log(encrypted);
+
+    console.time(`Decryption ${type}`);
+    decrypted = await cipher.Decrypt(type,encrypted,key);
+    console.timeEnd(`Decryption ${type}`);
+
+    //console.log(decrypted);
+
+     //The length is lower because the hill cipher removes spaces and special characters
+
+    console.log('-----------------------------------\n');
+
+
     
 })();

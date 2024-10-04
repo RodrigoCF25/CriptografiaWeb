@@ -1,4 +1,4 @@
-const Cipher = require('./Cipher.js');
+const Cipher = require('../Cipher.js');
 
 
 

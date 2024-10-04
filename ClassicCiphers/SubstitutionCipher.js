@@ -1,6 +1,6 @@
-const Cipher = require('./Cipher.js');
+const Cipher = require('../Cipher.js');
 
-const {isAlphabetic } = require('./TextLib.js');
+const {isAlphabetic } = require('../TextLib.js');
 
 
 class SubstitutionCipher extends Cipher{
@@ -57,6 +57,11 @@ class SubstitutionCipher extends Cipher{
     async Decrypt(text,pKey){
         let key = this.CompleteKey(pKey);
 
+        key = Object.keys(key).reduce((acc,curr) => {
+            acc[key[curr]] = curr;
+            return acc;
+        },{});
+
         text = this.PrepareText(text);
         let sizeOfBlock = this.CalculateSizeOfBlock(text);
 
@@ -77,10 +82,10 @@ class SubstitutionCipher extends Cipher{
             }
             if (char === char.toUpperCase()) {
                 char = char.toLowerCase();
-                char = Object.keys(key).find(k => key[k] === char);
+                char = key[char];
                 return char.toUpperCase();
             }
-            return Object.keys(key).find(k => key[k] === char);
+            return key[char];
         }).join('');
     }
 
