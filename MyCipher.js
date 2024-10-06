@@ -10,6 +10,10 @@ const PlayfairCipher = require('./ClassicCiphers/PlayfairCipher');
 
 const HillCipher = require('./ClassicCiphers/HillCipher');
 
+const ECB = require('./SymetricCiphers/ECB'); 
+
+const CBC = require('./SymetricCiphers/CBC');
+
 class CipherMaster{
 
     constructor(){
@@ -19,7 +23,9 @@ class CipherMaster{
             'transposition': () => new TranspositionCipher(),
             'vigenere': () => new Vigenere(),
             'playfair': () => new PlayfairCipher(),
-            'hill': () => new HillCipher()
+            'hill': () => new HillCipher(),
+            'ecb': () => new ECB(),
+            'cbc': () => new CBC()
         };
     }
 
@@ -27,8 +33,16 @@ class CipherMaster{
         return await this.types[type]().Encrypt(text,key);
     }
 
+    async Encrypt(type,text,key,another){
+        return await this.types[type]().Encrypt(text,key,another);
+    }
+
     async Decrypt(type,text,key){
         return await this.types[type]().Decrypt(text,key);
+    }
+
+    async Decrypt(type,text,key,another){
+        return await this.types[type]().Decrypt(text,key,another);
     }
 
 
@@ -2469,7 +2483,7 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
 
     
     console.log(text.length);
-    text = "Springtrap is the best animatronico";
+    //text = "Springtrap is the best animatronico";
     let type = "caesar";
     let key = 13;
     console.log(`${type.toUpperCase()} Cipher`);
@@ -2606,6 +2620,58 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
 
     console.log('-----------------------------------\n');
 
+
+    type = "ecb"
+
+    key = "holahola";
+
+    text = "Springtrap is the best animatronico";
+
+    console.log(`${type.toUpperCase()} Cipher`);
+
+    console.time(`Encryption ${type}`);
+    encrypted = await cipher.Encrypt(type,text,key);
+    console.timeEnd(`Encryption ${type}`);
+
+    //console.log(encrypted);
+
+
+    console.time(`Decryption ${type}`);
+
+    decrypted = await cipher.Decrypt(type,encrypted,key);
+
+    console.timeEnd(`Decryption ${type}`);
+
+    //console.log(decrypted);
+
+    console.log('-----------------------------------\n');
+
+
+    type = "cbc"
+
+    key = "holahola";
+
+    iv = "iviviviv";
+
+    text = "Springtrap is the best animatronico";
+
+    console.log(`${type.toUpperCase()} Cipher`);
+
+    console.time(`Encryption ${type}`);
+
+    encrypted = await cipher.Encrypt(type,text,key,iv);
+
+    console.timeEnd(`Encryption ${type}`);
+
+    console.log(encrypted);
+
+    console.time(`Decryption ${type}`);
+
+    decrypted = await cipher.Decrypt(type,encrypted,key,iv);
+
+    console.timeEnd(`Decryption ${type}`);
+
+    console.log(decrypted);
 
     
 })();
