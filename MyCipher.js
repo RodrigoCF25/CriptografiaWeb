@@ -14,6 +14,8 @@ const ECB = require('./SymetricCiphers/ECB');
 
 const CBC = require('./SymetricCiphers/CBC');
 
+const DES = require('./SymetricCiphers/DES');
+
 class CipherMaster{
 
     constructor(){
@@ -25,7 +27,8 @@ class CipherMaster{
             'playfair': () => new PlayfairCipher(),
             'hill': () => new HillCipher(),
             'ecb': () => new ECB(),
-            'cbc': () => new CBC()
+            'cbc': () => new CBC(),
+            'des': () => new DES(),
         };
     }
 
@@ -2623,7 +2626,7 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
 
     type = "ecb"
 
-    key = "holahola";
+    key = "daylight";
 
     text = "Springtrap is the best animatronico";
 
@@ -2633,7 +2636,7 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
     encrypted = await cipher.Encrypt(type,text,key);
     console.timeEnd(`Encryption ${type}`);
 
-    //console.log(encrypted);
+    //console.log(encrypted.length);
 
 
     console.time(`Decryption ${type}`);
@@ -2642,18 +2645,16 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
 
     console.timeEnd(`Decryption ${type}`);
 
-    //console.log(decrypted);
+    //console.log(decrypted.length);
 
     console.log('-----------------------------------\n');
 
 
     type = "cbc"
 
-    key = "holahola";
 
     iv = "iviviviv";
 
-    text = "Springtrap is the best animatronico";
 
     console.log(`${type.toUpperCase()} Cipher`);
 
@@ -2663,7 +2664,7 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
 
     console.timeEnd(`Encryption ${type}`);
 
-    console.log(encrypted);
+    //console.log(encrypted.length);
 
     console.time(`Decryption ${type}`);
 
@@ -2671,7 +2672,37 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
 
     console.timeEnd(`Decryption ${type}`);
 
-    console.log(decrypted);
+    //console.log(decrypted.length);
+
+
+
+    console.log('-----------------------------------\n');
+
+    type = "des"
+
+    key = "daylight";
+
+    console.log(`${type.toUpperCase()} Cipher`);
+
+    console.time(`Encryption ${type}`);
+
+    encrypted = await cipher.Encrypt(type,text,key);
+
+    console.timeEnd(`Encryption ${type}`);
+
+    //console.log(encrypted);
+
+    console.time(`Decryption ${type}`);
+
+    decrypted = await cipher.Decrypt(type,encrypted,key);
+
+    console.timeEnd(`Decryption ${type}`);
+
+    //console.log(decrypted);
+
+
+    console.log('-----------------------------------\n');
+
 
     
 })();
