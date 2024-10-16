@@ -100,9 +100,7 @@ class AES extends SymetricCipher{
 
     
     KeyExpansion(key){
-
         // Receives a key in binary format
-
         const RotWord = (word) => {
             // Receives a word in hex format (array, each element is a byte (2 hex characters))
             let copy = [...word];
@@ -157,15 +155,32 @@ class AES extends SymetricCipher{
                 result = this.HexGrouping(BinaryToHex(result));
                 words.push(result);
             }
-
-            console.log(words.at(-1));
-
         }
 
-        console.log(words.length);
+        let keys = new Array(Math.floor(rounds + 1)).fill([]);
+        for(let i = 0; i < rounds + 1; i++){
+            keys[i] = words.slice(i*4,i*4+4);
+        }
+
+        return function*(){
+
+            let roundCounter = 0;
+            while(true){
+                yield keys[roundCounter];
+                roundCounter++;
+                if(roundCounter > rounds){
+                    roundCounter = 0;
+                }
+            }
+
+        }.bind(this)();
 
 
+    }
 
+
+    AddRoundKey(input,key){
+        
     }
 
 
@@ -186,9 +201,11 @@ class AES extends SymetricCipher{
 
         input = this.PrepareInput(input);
 
-        let keyWords = this.KeyExpansion(key);
+        let keyExpansionGenerator = this.KeyExpansion(key);
 
-
+        for(let i = 0; i <= 10; i++){
+            console.log(keyExpansionGenerator.next().value);
+        }
 
         
     }
@@ -222,6 +239,6 @@ p2 = ["1","0","0","0","0","0","1","1"]
 
 let myAES = new AES();
 
-myAES.Encrypt("Hola","HolaHolaHolaHolaHolaHolaHolaHola");
+myAES.Encrypt("Hola","HolaHolaHolaHola");
 
 
