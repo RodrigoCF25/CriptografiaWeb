@@ -137,13 +137,12 @@ class AES extends SymetricCipher{
         const rCon = this.#GetRCon();
 
         const numberOfWordsRequired = 4 * (rounds + 1);
-        console.log(numberOfWordsRequired);
         for(let i = divider; i < numberOfWordsRequired; i++){
             let before = words[i-1];
             if(divider == 8 && i % 4 == 0){
-                let subword = HexToBinary(SubWord(RotWord(before),sBox).split(''));
-                let result = XOR(HexToBinary(word[i-divider].split('')),subword);
-                words.push(HexGrouping(BinaryToHex(result)));
+                let subword = HexToBinary(SubWord(RotWord(before),sBox).join('')).split('');
+                let result = XOR(HexToBinary(words[i-divider].join('')).split(''),subword);
+                words.push(this.HexGrouping(BinaryToHex(result)));
             }
             else if(i % divider == 0){
                 let roatedBeforeWord = RotWord(words[i-1]);
@@ -223,6 +222,6 @@ p2 = ["1","0","0","0","0","0","1","1"]
 
 let myAES = new AES();
 
-myAES.Encrypt("Hola","HolaHolaHolaHola");
+myAES.Encrypt("Hola","HolaHolaHolaHolaHolaHolaHolaHola");
 
 
