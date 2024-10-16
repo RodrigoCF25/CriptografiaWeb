@@ -46,6 +46,8 @@ class HillCipher extends Cipher{
             throw e; //Key cannot be inverted
         }
 
+        const copyText = text;
+
         text = this.PrepareText(text);
         
         let sizeOfBlock = this.CalculateSizeOfBlock(text);
@@ -62,8 +64,30 @@ class HillCipher extends Cipher{
             encryptedBlocks.push(this.#EncryptBlock(block,key));
         }
 
-        const results = await Promise.all(encryptedBlocks);
-        return results.join('');
+        let results = await Promise.all(encryptedBlocks);
+
+        results = results.join('').split('');
+
+        let encryptedText = [];
+
+        for (let i = 0; i < copyText.length; i++) {
+            if (this.ALPHABET.includes(copyText[i].toLowerCase())) {
+                let letter = results.shift();
+                if (copyText[i] == copyText[i].toUpperCase()) {
+                    letter = letter.toUpperCase();
+                }
+                encryptedText.push(letter);
+            } else {
+                encryptedText.push(copyText[i]);
+            }
+        }
+
+        if(results.length > 0){
+            encryptedText.push(results.join(''));
+        }
+
+
+        return encryptedText.join('');
 
     }
 
@@ -136,6 +160,8 @@ class HillCipher extends Cipher{
             throw e; //Key cannot be inverted
         }
 
+        const copyText = text;
+
         text = this.PrepareText(text);
 
         let sizeOfBlock = this.CalculateSizeOfBlock(text);
@@ -155,13 +181,35 @@ class HillCipher extends Cipher{
         let keyInverse = this.#GetKeyInverse(key);
 
 
+
         for (let i = 0; i < text.length; i++) {
             let block = text.splice(0,sizeOfBlock)
             decryptedBlocks.push(this.#DecryptBlock(block,keyInverse));
         }
 
-        const results = await Promise.all(decryptedBlocks);
-        return results.join('');
+        let results = await Promise.all(decryptedBlocks);
+
+        results = results.join('').split('');
+
+        let decryptedText = [];
+
+        for (let i = 0; i < copyText.length; i++) {
+            if (this.ALPHABET.includes(copyText[i].toLowerCase())) {
+                let letter = results.shift();
+                if (copyText[i] == copyText[i].toUpperCase()) {
+                    letter = letter.toUpperCase();
+                }
+                decryptedText.push(letter);
+            } else {
+                decryptedText.push(copyText[i]);
+            }
+        }
+
+        if(results.length > 0){
+            decryptedText.push(results.join(''));
+        }
+
+        return decryptedText.join('');
 
     }
 
@@ -169,8 +217,12 @@ class HillCipher extends Cipher{
 
         const keyLength = key.length;
 
+        let difference = 0;
+        
         if(text.length %keyLength != 0){
-            throw new Error('The text is not valid because the size of the block is not a multiple of the key length');
+            difference = keyLength - text.length % keyLength;
+            const padding = Array(difference).fill('x');
+            text = text.concat(padding);
         }
 
         const textLength = text.length;
@@ -182,6 +234,11 @@ class HillCipher extends Cipher{
             block = this.#DecryptP(block,key);
             decryptedBlock.splice(i,keyLength,...block);
         }
+
+        if(difference != 0){
+            decryptedBlock = decryptedBlock.slice(0,-difference);
+        }
+        
 
         return decryptedBlock.join('');
 

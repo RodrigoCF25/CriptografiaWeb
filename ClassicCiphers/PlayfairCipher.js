@@ -104,6 +104,7 @@ class PlayfairCipher extends Cipher{
         this.keyMatrix = [];
         this.lettersPositions = {}
 
+        const copyText = text;
         text = this.PrepareText(text);
         key = this.PrepareText(key);
 
@@ -134,9 +135,33 @@ class PlayfairCipher extends Cipher{
 
         }
 
-        const results = await Promise.all(encryptedBlocks);
+        let results = await Promise.all(encryptedBlocks);
 
-        return results.join('');
+        results = results.join('').split('');
+
+        let encryptedText = [];
+
+        
+
+        for(let i = 0; i < copyText.length; i++){
+            if(copyText[i].match(/[a-z]/i)){
+                let letter = results.shift();
+                if(copyText[i] == copyText[i].toUpperCase()){
+                    letter = letter.toUpperCase();
+                }
+                encryptedText.push(letter);
+            }else{
+                encryptedText.push(copyText[i]);
+            }
+        }
+
+        if(results.length > 0){
+            encryptedText.push(results.join(''));
+        }
+
+        
+
+        return encryptedText.join('');
          
     }
 
@@ -199,6 +224,7 @@ class PlayfairCipher extends Cipher{
 
     async Decrypt(text,key){
 
+        const copyText = text;
         text = this.PrepareText(text);
         key = this.PrepareText(key);
 
@@ -206,6 +232,10 @@ class PlayfairCipher extends Cipher{
             this.ValidateKey(key);
         }catch(e){
             throw e;
+        }
+
+        if(text.length % 2 != 0){
+            throw new Error('The text to decrypt is not valid because it does not have an even number of letters');
         }
 
 
@@ -229,22 +259,33 @@ class PlayfairCipher extends Cipher{
             decryptedBlocks.push(this.DecryptBlock(block));
     
         }
+        
+        let results = await Promise.all(decryptedBlocks);
+
+        results = results.join('').split('');
 
 
-        try{
-        const results = await Promise.all(decryptedBlocks)
-        return results.join('');
-        }catch(e){
-            throw e;
+        let decryptedText = [];
+
+        for(let i = 0; i < copyText.length; i++){
+            if(copyText[i].match(/[a-z]/i)){
+                let letter = results.shift();
+                if(copyText[i] == copyText[i].toUpperCase()){
+                    letter = letter.toUpperCase();
+                }
+                decryptedText.push(letter);
+            }else{
+                decryptedText.push(copyText[i]);
+            }
         }
+
+        return decryptedText.join('');
+        
+
 
     }
 
     async DecryptBlock(text,key){
-
-        if(text.length % 2 != 0){
-            throw new Error('The text is not valid because the size of the block is not even');
-        }
 
         const textLength = text.length;
 
