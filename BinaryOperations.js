@@ -8,9 +8,16 @@ function _AND(a, b) {
 }
 
 function AND(a, b) {
-   return a.map((char, index) => {
-         return _AND(char,b[index]);
-    }).join('');
+    minLength = Math.min(a.length, b.length);
+
+    let result = new Array(minLength).fill("0");
+
+    for (let i = 0; i < minLength; i++) {
+        result[i] = _AND(a[i], b[i]);
+    }
+
+    return result.join('');
+
 }
 
 
@@ -22,9 +29,15 @@ function _OR(a, b) {
 }
 
 function OR(a, b) {
-    return a.map((char, index) => {
-        return _OR(char,b[index]);
-    }).join('');
+    minLength = Math.min(a.length, b.length);
+
+    let result = new Array(minLength).fill("0");
+
+    for (let i = 0; i < minLength; i++) {
+        result[i] = _OR(a[i], b[i]);
+    }
+
+    return result.join('');
 }
 
 
@@ -37,9 +50,15 @@ function _XOR(a, b) {
 }
 
 function XOR(a, b) {
-    return a.map((char, index) => {
-        return _XOR(char,b[index]);
-    }).join('');
+    minLength = Math.min(a.length, b.length);
+
+    let result = new Array(minLength).fill("0");
+
+    for (let i = 0; i < minLength; i++) {
+        result[i] = _XOR(a[i], b[i]);
+    }
+
+    return result.join('');
 }
 
 function _NOT(a) {
@@ -50,9 +69,13 @@ function _NOT(a) {
 }
 
 function NOT(a) {
-    return a.map((char) => {
-        return _NOT(char);
-    }).join('');
+    let result = new Array(a.length).fill("0");
+
+    for (let i = 0; i < a.length; i++) {
+        result[i] = _NOT(a[i]);
+    }
+
+    return result.join('');
 }
 
 
@@ -103,7 +126,6 @@ function BinaryToText(binary) {
     
     let binaryLength = binary.length;
 
-    
     let text = new Array(binaryLength/8).fill(0)
     let index = 0;
     for(let i = 0; i < binaryLength; i+=8){

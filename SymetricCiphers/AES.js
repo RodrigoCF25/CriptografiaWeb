@@ -1,9 +1,6 @@
 const {TextToBinary, BinaryToText, TextToHex, HexToText, BinaryToHex, XOR, HexToBinary} = require('../BinaryOperations');
 
-const {RemoveExtraEmptySpaces} = require('../TextLib');
-
-
-const {SymetricCipher, TypeOfInput} = require('./SymetricCipher');
+const {SymetricCipher} = require('./SymetricCipher');
 
 
 const sBox = require("./static/AESSBox.json");
@@ -138,20 +135,21 @@ class AES extends SymetricCipher{
         for(let i = divider; i < numberOfWordsRequired; i++){
             let before = words[i-1];
             if(divider == 8 && i % 4 == 0){
-                let subword = HexToBinary(SubWord(RotWord(before),sBox).join('')).split('');
-                let result = XOR(HexToBinary(words[i-divider].join('')).split(''),subword);
+                let subword = HexToBinary(SubWord(RotWord(before),sBox).join(''));
+                let result = XOR(HexToBinary(words[i-divider].join('')),subword);
                 words.push(this.HexGrouping(BinaryToHex(result)));
             }
             else if(i % divider == 0){
                 let roatedBeforeWord = RotWord(words[i-1]);
-                let subword = HexToBinary(SubWord(roatedBeforeWord,sBox).join('')).split('');
-                let rConValue = HexToBinary(rCon[Math.floor(i/divider)]).split('');
-                let result = XOR(HexToBinary(words[i-divider].join('')).split(''),XOR(subword,rConValue));
+                let subword = HexToBinary(SubWord(roatedBeforeWord,sBox).join(''));
+                let rConValue = HexToBinary(rCon[Math.floor(i/divider)]);
+                rConValue = rConValue.padEnd(32,'0');
+                let result = XOR(HexToBinary(words[i-divider].join('')),XOR(subword,rConValue));
                 words.push(this.HexGrouping(BinaryToHex(result)));
 
             }
             else{
-                let result = XOR(HexToBinary(words[i-1].join('')).split(''),HexToBinary(words[i-divider].join('')).split(''));
+                let result = XOR(HexToBinary(words[i-1].join('')),HexToBinary(words[i-divider].join('')));
                 result = this.HexGrouping(BinaryToHex(result));
                 words.push(result);
             }
@@ -162,32 +160,70 @@ class AES extends SymetricCipher{
             keys[i] = words.slice(i*4,i*4+4);
         }
 
-        return function*(){
-
-            let roundCounter = 0;
-            while(true){
-                yield keys[roundCounter];
-                roundCounter++;
-                if(roundCounter > rounds){
-                    roundCounter = 0;
-                }
-            }
-
-        }.bind(this)();
-
+        return keys;
 
     }
 
 
+
+
     AddRoundKey(input,key){
+
+        const shape = input.length;
+        let result = Array.from({ length: shape }, () => []);
         
+
+        for(let i = 0; i < shape; i++){
+            for(let j = 0; j < shape; j++){
+                result[i].push(
+                    BinaryToHex(
+                        XOR(
+                        HexToBinary(input[i][j]),
+                        HexToBinary(key[i][j]))
+                    )
+                );
+            }
+        }
+
+        return result;
+
     }
 
 
 
 
     EncryptBlock(input, subkeys) {
+
+        for(const subkey of subkeys)
+        {
+            let result = this.AddRoundKey(input,subkey);
+            console.log(input,subkey);
+            console.log(result);
+            break;
+        }
+
         
+    }
+
+    CreateBlocks(input, keyLength){
+
+        input = this.PrepareInput(input);
+
+        if(input % keyLength != 0){
+            const paddingLength = keyLength - (input.length % keyLength);
+            input = [...input, ...new Array(paddingLength).fill('0')];
+        }
+
+        input = this.HexGrouping(BinaryToHex(input.join('')));
+
+        let blocks = Array.from({ length: Math.floor(input.length / 16) }, () => []);  
+
+        for(let i = 0; i < input.length; i+=4){
+            blocks[Math.floor(i/16)].push(input.slice(i,i+4));
+        }
+
+        return blocks;
+
     }
 
 
@@ -195,19 +231,21 @@ class AES extends SymetricCipher{
 
         key = this.PrepareKey(key);
 
+        const keyLength = key.length;
+
         if(!key.length in this.mustKeyLength){
             return null;
         }
 
-        input = this.PrepareInput(input);
+        const keys = this.KeyExpansion(key);
 
-        let keyExpansionGenerator = this.KeyExpansion(key);
+        const blocks = this.CreateBlocks(input,keyLength);
 
-        for(let i = 0; i <= 10; i++){
-            console.log(keyExpansionGenerator.next().value);
+        for(let i = 0; i < blocks.length; i++){
+            this.EncryptBlock(blocks[i],keys);
+            break;
         }
 
-        
     }
 
 
@@ -239,6 +277,5 @@ p2 = ["1","0","0","0","0","0","1","1"]
 
 let myAES = new AES();
 
-myAES.Encrypt("Hola","HolaHolaHolaHola");
-
+myAES.Encrypt("Springtrap is the best animatronic","HolaHolaHolaHola");
 
