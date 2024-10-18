@@ -3,6 +3,8 @@ const {TextToBinary, BinaryToText, TextToHex, HexToText, BinaryToHex, XOR, HexTo
 
 const {SymetricCipher} = require('./SymetricCipher');
 
+const {Transpose} = require('../MatrixLib');
+
 const fs = require('fs');
 
 const irreduciblePolynomial = ["1","0","0","0","1","1","0","1","1"];
@@ -157,7 +159,7 @@ class AES extends SymetricCipher{
         const numberOfWordsRequired = 4 * (rounds + 1);
         for(let i = divider; i < numberOfWordsRequired; i++){
             let before = words[i-1];
-            if(divider == 8 && i % 4 == 0){
+            if(divider == 8 && i % 8 == 4){
                 let subword = HexToBinary(this.#SubWord(this.#RotWord(before)).join(''));
                 let result = XOR(HexToBinary(words[i-divider].join('')),subword);
                 words.push(this.HexGrouping(BinaryToHex(result)));
@@ -165,11 +167,10 @@ class AES extends SymetricCipher{
             else if(i % divider == 0){
                 let roatedBeforeWord = this.#RotWord(words[i-1]);
                 let subword = HexToBinary(this.#SubWord(roatedBeforeWord).join(''));
-                let rConValue = HexToBinary(rCon[Math.floor(i/divider)]);
-                rConValue = rConValue.padEnd(32,'0');
+                let rConValue = HexToBinary(rCon[Math.floor((i/divider)) - 1]);
+                rConValue = rConValue.padEnd(32,"0");
                 let result = XOR(HexToBinary(words[i-divider].join('')),XOR(subword,rConValue));
                 words.push(this.HexGrouping(BinaryToHex(result)));
-
             }
             else{
                 let result = XOR(HexToBinary(words[i-1].join('')),HexToBinary(words[i-divider].join('')));
@@ -178,17 +179,22 @@ class AES extends SymetricCipher{
             }
         }
 
-        let keys = new Array(Math.floor(rounds + 1)).fill([]);
+        let keys = Array.from({ length: rounds + 1 }, () => []);
         for(let i = 0; i < rounds + 1; i++){
             keys[i] = words.slice(i*4,i*4+4);
         }
+
+        //But we need to transpose the keys
+        for(let i = 0; i < keys.length; i++){
+            keys[i] = Transpose(keys[i]);
+        }
+
 
         return keys;
     }
 
 
     AddRoundKey(input,key){
-
         const shape = input.length;
         let result = Array.from({ length: shape }, () => []);
     
@@ -206,8 +212,6 @@ class AES extends SymetricCipher{
 
         return result;
     }
-
-
 
     #SubstituteBytes(block){ //JUST FOR A BLOCK
         for(let i = 0; i < block.length; i++){
@@ -234,7 +238,7 @@ class AES extends SymetricCipher{
         }
 
 
-        let result = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => "00000000"));
+        let result = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => "0".padEnd(8,"0")));
 
         for(let i = 0; i < 4; i++){
             for(let j = 0; j < 4; j++){
@@ -263,6 +267,8 @@ class AES extends SymetricCipher{
         this.#SubstituteBytes(result);
         this.#ShiftRows(result);
         result = this.AddRoundKey(result,finalKey);
+
+        result = Transpose(result);
         return result;
                 
     }
@@ -285,12 +291,188 @@ class AES extends SymetricCipher{
             blocks[Math.floor(i/16)].push(input.slice(i,i+4));
         }
 
+        //But we need to transpose the blocks
+
+        for(let i = 0; i < blocks.length; i++){
+            blocks[i] = Transpose(blocks[i]);
+        }
+
         return blocks;
 
     }
 
 
     Encrypt(input,key){
+
+        key = this.PrepareKey(key);
+        const keyLength = key.length;
+
+        if(!key.length in this.mustKeyLength){
+            return null;
+        }
+
+        try{
+        this.sBox = this.sBox || this.#GetSBox();
+        }
+        catch(e){
+            console.log(e);
+            return null;
+        }
+
+        const keys = this.KeyExpansion(key);
+        const blocks = this.CreateBlocks(input);
+
+        let cipherText = Array.from({ length: blocks.length }, undefined);
+        for(let i = 0; i < blocks.length; i++){
+            cipherText[i] = this.EncryptBlock(blocks[i],keys).flat().join('');
+        }
+        
+        cipherText = cipherText.join('');
+
+        return cipherText;
+    }
+
+
+    TestAddRoundKey(){
+
+        let block = [
+            ["47","40","a3","4c"],
+            ["37","d4","70","9f"],
+            ["94","e4","3a","42"],
+            ["ed","a5","a6","bc"]
+        ]
+
+        let key = [
+            ["ac","19","28","57"],
+            ["77","fa","d1","5c"],
+            ["66","dc","29","00"],
+            ["f3","21","41","6a"]
+        ]
+
+        let result = this.AddRoundKey(block,key);
+        console.log("Result: ",result);
+        console.log("Expected: ");
+        const expected = [
+            ["eb","59","8b","1b"],
+            ["40","2e","a1","c3"],
+            ["f2","38","13","42"],
+            ["1e","84","e7","d6"]
+        ];
+        console.log(expected);
+
+        if(result.flat().join('') == expected.flat().join('')){
+            console.log("Test passed");
+        }
+        else{
+            console.log("Test failed");
+        }
+    }
+
+    TestSubstituteBytes(){
+
+        try{
+            this.sBox = this.sBox || this.#GetSBox();
+        }
+        catch(e){
+            console.log(e);
+            return null;
+        }
+
+
+        let block = [
+            ["ea","04","65","85"],
+            ["83","45","5d","96"],
+            ["5c","33","98","b0"],
+            ["f0","2d","ad","c5"]
+        ]
+
+        this.#SubstituteBytes(block);
+
+        console.log("Result: ",block);
+        console.log("Expected: ");
+        const expected = [
+            ["87","f2","4d","97"],
+            ["ec","6e","4c","90"],
+            ["4a","c3","46","e7"],
+            ["8c","d8","95","a6"]
+        ];
+        console.log(expected);
+
+        if(block.flat().join('') == expected.flat().join('')){
+            console.log("Test passed");
+        }
+        else{
+            console.log("Test failed");
+        }
+    }
+
+    TestShiftRows(){
+
+        let block = [
+            ["87","f2","4d","97"],
+            ["ec","6e","4c","90"],
+            ["4a","c3","46","e7"],
+            ["8c","d8","95","a6"]
+        ]
+
+        this.#ShiftRows(block);
+
+        console.log("Result: ",block);
+
+        console.log("Expected: ");
+
+        const expected = [
+            ["87","f2","4d","97"],
+            ["6e","4c","90","ec"],
+            ["46","e7","4a","c3"],
+            ["a6","8c","d8","95"]
+        ];
+
+        console.log(expected);
+
+        if(block.flat().join('') == expected.flat().join('')){
+            console.log("Test passed");
+        }
+        else{
+            console.log("Test failed");
+        }
+    }
+
+
+    TestMixColumns(){
+        let block = [
+            ["87","f2","4d","97"],
+            ["6e","4c","90","ec"],
+            ["46","e7","4a","c3"],
+            ["a6","8c","d8","95"]
+        ]
+
+        let result = this.#MixColumns(block);
+
+        console.log("Result: ",result);
+
+        console.log("Expected: ");
+
+        const expected = [
+            ["47","40","a3","4c"],
+            ["37","d4","70","9f"],
+            ["94","e4","3a","42"],
+            ["ed","a5","a6","bc"]
+        ];
+
+        console.log(expected);
+
+        if(result.flat().join('') == expected.flat().join('')){
+            console.log("Test passed");
+        }
+        else{
+            console.log("Test failed");
+        }
+    }
+
+
+    TestKeyExpansion(){
+        let key = "satishcjisboring";
 
         key = this.PrepareKey(key);
 
@@ -310,16 +492,11 @@ class AES extends SymetricCipher{
 
         const keys = this.KeyExpansion(key);
 
-        const blocks = this.CreateBlocks(input);
+        console.log(keys);
 
-        let cipherText = [];
-        for(let i = 0; i < blocks.length; i++){
-            cipherText.push(this.EncryptBlock(blocks[i],keys));
-        }
-
-        console.log(cipherText);
 
     }
+
 
 
     DecryptBlock(input, subkeys) {
@@ -335,20 +512,11 @@ class AES extends SymetricCipher{
 }
 
 
-let p1 = ["0","0","1","0","1","0","1","1"]
-let p2 = ["0","1","0","0","0","0","0","1"]
+//Execute if the file is run directly
 
-//console.log(Add(p1,p2));
+if (require.main === module) {
 
+    let myAES = new AES();
 
-p1 = ["0","1","0","1","0","1","1","1"]
-p2 = ["1","0","0","0","0","0","1","1"]
-
-
-//console.log(Multiply(p1,p2));
-
-
-let myAES = new AES();
-
-myAES.Encrypt("Springtrap is the best animatronic","HolaHolaHolaHola");
-
+    console.log(myAES.Encrypt("Springtrap is the best animatronic","HolaHolaHolaHola"));
+}
