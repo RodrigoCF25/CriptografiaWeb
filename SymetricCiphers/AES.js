@@ -32,6 +32,12 @@ function Multiply(a,b){
 
     dictionary[0] = copyA;
 
+    b = [...b];
+
+    if (copyA.every(bit => bit === "0") || b.every(bit => bit === "0")){
+        return new Array(8).fill("0");
+    }
+
     // Create a dictionary with all the possible values of a * x^i
     for(let i = 1; i < a.length; i++){
         copyA = MultiplyByX(copyA);
@@ -80,9 +86,17 @@ class AES extends SymetricCipher{
         }; 
 
         this.sBox = null;
+
         this.#GetRCon = () => ([
             "01","02","04","08","10","20","40","80","1b","36","6c","d8","ab","4d","9a","2f"
         ]);
+
+        this.MatrixForMixColumns = [
+            ["02","03","01","01"],
+            ["01","02","03","01"],
+            ["01","01","02","03"],
+            ["03","01","01","02"]
+        ];
 
         this.#GetRounds = () => ({
             128: 10,
@@ -213,6 +227,26 @@ class AES extends SymetricCipher{
 
     #MixColumns(block){ //JUST FOR A BLOCK (4x4)
 
+        for(let i = 0; i < 4; i++){
+            for(let j = 0; j< 4; j++){
+                block[i][j] = HexToBinary(block[i][j]);
+            }
+        }
+
+
+        let result = Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => "00000000"));
+
+        for(let i = 0; i < 4; i++){
+            for(let j = 0; j < 4; j++){
+                for(let k = 0; k < 4; k++){
+                    result[i][j] = Add(result[i][j],Multiply(HexToBinary(this.MatrixForMixColumns[i][k]),block[k][j]));
+                }
+                result[i][j] = BinaryToHex(result[i][j]);
+            }
+        }
+
+        return result;
+
     }
 
 
@@ -223,18 +257,23 @@ class AES extends SymetricCipher{
         for(const subkey of cipherRoundsKeys){
             this.#SubstituteBytes(result);
             this.#ShiftRows(result);
-            break;
+            result = this.#MixColumns(result);
+            result = this.AddRoundKey(result,subkey);
         }
-
-        
+        this.#SubstituteBytes(result);
+        this.#ShiftRows(result);
+        result = this.AddRoundKey(result,finalKey);
+        return result;
+                
     }
 
-    CreateBlocks(input, keyLength){
+    CreateBlocks(input){
 
         input = this.PrepareInput(input);
+        const sizeOfBlock = 128;
 
-        if(input % keyLength != 0){
-            const paddingLength = keyLength - (input.length % keyLength);
+        if(input % sizeOfBlock != 0){
+            const paddingLength = sizeOfBlock - (input.length % sizeOfBlock);
             input = [...input, ...new Array(paddingLength).fill('0')];
         }
 
@@ -271,12 +310,14 @@ class AES extends SymetricCipher{
 
         const keys = this.KeyExpansion(key);
 
-        const blocks = this.CreateBlocks(input,keyLength);
+        const blocks = this.CreateBlocks(input);
 
+        let cipherText = [];
         for(let i = 0; i < blocks.length; i++){
-            this.EncryptBlock(blocks[i],keys);
-            break;
+            cipherText.push(this.EncryptBlock(blocks[i],keys));
         }
+
+        console.log(cipherText);
 
     }
 
