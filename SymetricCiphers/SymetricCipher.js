@@ -12,14 +12,24 @@ const TypeOfInput = {
 
 class SymetricCipher extends Cipher{
 
+    constructor(){
+        super();
+        
+        this.TypeOfInput = {
+            TEXT: 0,
+            BINARY: 1,
+            HEX: 2,
+        }
+    }
+
 
     IdentifyFormat(input){
         if(input.match(/^[0-1]+$/)){
-            return TypeOfInput.BINARY;
+            return this.TypeOfInput.BINARY;
         }else if(input.match(/^[0-9A-Fa-f]+$/)){
-            return TypeOfInput.HEX;
+            return this.TypeOfInput.HEX;
         }else{
-            return TypeOfInput.TEXT;
+            return this.TypeOfInput.TEXT;
         }
     }
 

@@ -1,5 +1,6 @@
-const { dirname } = require('path');
 const {TextToBinary, BinaryToText, TextToHex, HexToText, BinaryToHex, XOR, HexToBinary} = require('../BinaryOperations');
+
+const {RemoveExtraEmptySpaces} = require('../TextLib');
 
 const {SymetricCipher} = require('./SymetricCipher');
 
@@ -25,6 +26,7 @@ function MultiplyByX(array){
     }
     return copy;
 }
+
 
 function Multiply(a,b){
     
@@ -60,8 +62,68 @@ function Multiply(a,b){
         result = Add(result,dictionary[bitsOn[i]]).split('');
     }
 
-    return result;
+    return result.join('');
         
+}
+
+
+function Multiply2(a,b){
+    a = [...a];
+    b = [...b];
+
+    const AbitsOn = a.reduce((acc,bit,index) => {
+        if(bit === "1"){
+            acc.push( 8 - 1 - index);
+        }
+        return acc;
+    },[]);
+
+    const BbitsOn = b.reduce((acc,bit,index) => {
+        if(bit === "1"){
+            acc.push( 8 - 1 - index);
+        }
+        return acc;
+    },[]);
+
+    if (AbitsOn.length === 0 || BbitsOn.length === 0){
+        return new Array(8).fill("0");
+    }
+
+    let lowerPolynomial;
+    let higherPolynomial;
+    let bitsOnOfLowerPolynomial;
+
+    if(AbitsOn[0] >= BbitsOn[0]){
+        lowerPolynomial = [...b];
+        higherPolynomial = [...a];
+        bitsOnOfLowerPolynomial = BbitsOn;
+
+    }else{
+        lowerPolynomial = [...a];
+        higherPolynomial = [...b];
+        bitsOnOfLowerPolynomial = AbitsOn;
+    }
+
+    let dictionary = {};
+    dictionary[0] = higherPolynomial.join('');
+    let product = higherPolynomial.join('');
+
+
+    for(let i = 1; i <= bitsOnOfLowerPolynomial[0]; i++){
+        product = MultiplyByX(product);
+        if (bitsOnOfLowerPolynomial.includes(i)){
+            dictionary[i] = product.join('');
+        }
+    }
+
+    let result = dictionary[bitsOnOfLowerPolynomial[0]];
+
+    for(let i = 1; i < bitsOnOfLowerPolynomial.length; i++){
+        result = Add(result,dictionary[bitsOnOfLowerPolynomial[i]]);
+    }
+
+    return result;
+
 }
     
 
@@ -94,16 +156,16 @@ class AES extends SymetricCipher{
         ]);
 
         this.MatrixForMixColumns = [
-            ["02","03","01","01"],
-            ["01","02","03","01"],
-            ["01","01","02","03"],
-            ["03","01","01","02"]
-        ];
+            ["00000010", "00000011", "00000001", "00000001"],
+            ["00000001", "00000010", "00000011", "00000001"],
+            ["00000001", "00000001", "00000010", "00000011"],
+            ["00000011", "00000001", "00000001", "00000010"]
+        ]
 
         this.#GetRounds = () => ({
-            128: 10,
-            192: 12,
-            256: 14
+            16: 10,
+            24: 12,
+            32: 14
         });
 
     }
@@ -115,6 +177,53 @@ class AES extends SymetricCipher{
         }
         return result;
     }
+
+    PrepareInput(input){
+
+        input = RemoveExtraEmptySpaces(input);
+        const typeOfInput = this.IdentifyFormat(input);
+
+        switch(typeOfInput){
+            case this.TypeOfInput.TEXT:{
+                return this.HexGrouping(TextToHex(input, ''));
+
+            }
+            case this.TypeOfInput.BINARY:{
+                
+                return this.HexGrouping(BinaryToHex(input,''));
+                
+            }
+            case this.TypeOfInput.HEX:{
+                return this.HexGrouping(input);
+            }
+        }
+
+    }
+
+
+    PrepareKey(key){
+
+        key = RemoveExtraEmptySpaces(key);
+        const typeOfInput = this.IdentifyFormat(key);
+
+        switch(typeOfInput){
+            case this.TypeOfInput.TEXT:{
+                return this.HexGrouping(TextToHex(key, ''));
+
+            }
+            case this.TypeOfInput.BINARY:{
+                
+                return this.HexGrouping(BinaryToHex(key,''));
+                
+            }
+            case this.TypeOfInput.HEX:{
+                return this.HexGrouping(key);
+            }
+        }
+
+
+    }
+
 
     #RotWord(word){
         // Receives a word in hex format (array, each element is a byte (2 hex characters))
@@ -143,11 +252,9 @@ class AES extends SymetricCipher{
     KeyExpansion(key){
         // Receives a key in binary format
         let initialWords = [];
-        let hex = "";
-        let word = [];
-        for(let i = 0; i < key.length; i+=32){
-            hex = BinaryToHex(key.slice(i,i+32).join(''));
-            word = this.HexGrouping(hex);
+
+        for(let i = 0; i < key.length; i+=4){
+            let word = key.slice(i,i+4);
             initialWords.push(word);
         }
        
@@ -243,7 +350,12 @@ class AES extends SymetricCipher{
         for(let i = 0; i < 4; i++){
             for(let j = 0; j < 4; j++){
                 for(let k = 0; k < 4; k++){
-                    result[i][j] = Add(result[i][j],Multiply(HexToBinary(this.MatrixForMixColumns[i][k]),block[k][j]));
+
+                    // if(Multiply(this.MatrixForMixColumns[i][k],block[k][j]) != Multiply2(this.MatrixForMixColumns[i][k],block[k][j])){
+                    //     console.log("MatrixForMixColumns: ",this.MatrixForMixColumns[i][k]);
+                    //     console.log("Block: ",block[k][j]);
+                    // }
+                    result[i][j] = Add(result[i][j],Multiply2(this.MatrixForMixColumns[i][k],block[k][j]));
                 }
                 result[i][j] = BinaryToHex(result[i][j]);
             }
@@ -276,14 +388,13 @@ class AES extends SymetricCipher{
     CreateBlocks(input){
 
         input = this.PrepareInput(input);
-        const sizeOfBlock = 128;
+
+        const sizeOfBlock = 16;
 
         if(input % sizeOfBlock != 0){
             const paddingLength = sizeOfBlock - (input.length % sizeOfBlock);
-            input = [...input, ...new Array(paddingLength).fill('0')];
+            input = [...input, ...new Array(paddingLength).fill('00')];
         }
-
-        input = this.HexGrouping(BinaryToHex(input.join('')));
 
         let blocks = Array.from({ length: Math.floor(input.length / 16) }, () => []);  
 
@@ -318,7 +429,7 @@ class AES extends SymetricCipher{
             console.log(e);
             return null;
         }
-
+        
         const keys = this.KeyExpansion(key);
         const blocks = this.CreateBlocks(input);
 
@@ -512,6 +623,9 @@ class AES extends SymetricCipher{
 }
 
 
+module.exports = AES;
+
+
 //Execute if the file is run directly
 
 if (require.main === module) {
@@ -519,4 +633,7 @@ if (require.main === module) {
     let myAES = new AES();
 
     console.log(myAES.Encrypt("Springtrap is the best animatronic","HolaHolaHolaHola"));
+
+
+
 }
