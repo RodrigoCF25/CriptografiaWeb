@@ -104,7 +104,7 @@ class PlayfairCipher extends Cipher{
         this.keyMatrix = [];
         this.lettersPositions = {}
 
-        const copyText = text;
+        const copyText = text.split('');
         text = this.PrepareText(text);
         key = this.PrepareText(key);
 
@@ -139,26 +139,25 @@ class PlayfairCipher extends Cipher{
 
         results = results.join('').split('');
 
-        let encryptedText = [];
 
+        let encryptedText = copyText; //Points to the same array
         
 
+        let counter = 0;
         for(let i = 0; i < copyText.length; i++){
             if(copyText[i].match(/[a-z]/i)){
-                let letter = results.shift();
+                let letter = results[counter];
+                counter++;
                 if(copyText[i] == copyText[i].toUpperCase()){
                     letter = letter.toUpperCase();
                 }
-                encryptedText.push(letter);
-            }else{
-                encryptedText.push(copyText[i]);
+                encryptedText[i] = letter;
             }
         }
 
-        if(results.length > 0){
-            encryptedText.push(results.join(''));
+        if(counter < results.length){
+            encryptedText.push(results.slice(counter).join(''));
         }
-
         
 
         return encryptedText.join('');
@@ -224,7 +223,7 @@ class PlayfairCipher extends Cipher{
 
     async Decrypt(text,key){
 
-        const copyText = text;
+        const copyText = text.split('');
         text = this.PrepareText(text);
         key = this.PrepareText(key);
 
@@ -265,18 +264,22 @@ class PlayfairCipher extends Cipher{
         results = results.join('').split('');
 
 
-        let decryptedText = [];
+        let decryptedText = copyText; //Points to the same array
 
+        let counter = 0;
         for(let i = 0; i < copyText.length; i++){
             if(copyText[i].match(/[a-z]/i)){
-                let letter = results.shift();
+                let letter = results[counter];
+                counter++;
                 if(copyText[i] == copyText[i].toUpperCase()){
                     letter = letter.toUpperCase();
                 }
-                decryptedText.push(letter);
-            }else{
-                decryptedText.push(copyText[i]);
+                decryptedText[i] = letter;
             }
+        }
+
+        if(counter < results.length){
+            decryptedText.push(results.slice(counter).join(''));
         }
 
         return decryptedText.join('');

@@ -46,7 +46,7 @@ class HillCipher extends Cipher{
             throw e; //Key cannot be inverted
         }
 
-        const copyText = text;
+        const copyText = text.split('');
 
         text = this.PrepareText(text);
         
@@ -68,22 +68,23 @@ class HillCipher extends Cipher{
 
         results = results.join('').split('');
 
-        let encryptedText = [];
+        let encryptedText = copyText; //Points to the same array
+        
 
-        for (let i = 0; i < copyText.length; i++) {
-            if (this.ALPHABET.includes(copyText[i].toLowerCase())) {
-                let letter = results.shift();
-                if (copyText[i] == copyText[i].toUpperCase()) {
+        let counter = 0;
+        for(let i = 0; i < copyText.length; i++){
+            if(copyText[i].match(/[a-z]/i)){
+                let letter = results[counter];
+                counter++;
+                if(copyText[i] == copyText[i].toUpperCase()){
                     letter = letter.toUpperCase();
                 }
-                encryptedText.push(letter);
-            } else {
-                encryptedText.push(copyText[i]);
+                encryptedText[i] = letter;
             }
         }
 
-        if(results.length > 0){
-            encryptedText.push(results.join(''));
+        if(counter < results.length){
+            encryptedText.push(results.slice(counter).join(''));
         }
 
 
@@ -160,7 +161,7 @@ class HillCipher extends Cipher{
             throw e; //Key cannot be inverted
         }
 
-        const copyText = text;
+        const copyText = text.split('');
 
         text = this.PrepareText(text);
 
@@ -191,22 +192,22 @@ class HillCipher extends Cipher{
 
         results = results.join('').split('');
 
-        let decryptedText = [];
+        let decryptedText = copyText; //Points to the same array
 
-        for (let i = 0; i < copyText.length; i++) {
-            if (this.ALPHABET.includes(copyText[i].toLowerCase())) {
-                let letter = results.shift();
-                if (copyText[i] == copyText[i].toUpperCase()) {
+        let counter = 0;
+        for(let i = 0; i < copyText.length; i++){
+            if(copyText[i].match(/[a-z]/i)){
+                let letter = results[counter];
+                counter++;
+                if(copyText[i] == copyText[i].toUpperCase()){
                     letter = letter.toUpperCase();
                 }
-                decryptedText.push(letter);
-            } else {
-                decryptedText.push(copyText[i]);
+                decryptedText[i] = letter;
             }
         }
 
-        if(results.length > 0){
-            decryptedText.push(results.join(''));
+        if(counter < results.length){
+            decryptedText.push(results.slice(counter).join(''));
         }
 
         return decryptedText.join('');
