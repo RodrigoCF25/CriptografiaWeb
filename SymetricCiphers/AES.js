@@ -27,47 +27,7 @@ function MultiplyByX(array){
     return copy;
 }
 
-
 function Multiply(a,b){
-    
-    let dictionary = {};
-
-    let copyA = [...a];
-
-    dictionary[0] = copyA;
-
-    b = [...b];
-
-    if (copyA.every(bit => bit === "0") || b.every(bit => bit === "0")){
-        return new Array(8).fill("0");
-    }
-
-    // Create a dictionary with all the possible values of a * x^i
-    for(let i = 1; i < a.length; i++){
-        copyA = MultiplyByX(copyA);
-        dictionary[i] = copyA;
-    }
-
-    //Just get the bits that are on
-    const bitsOn = b.reduce((acc,bit,index) => {
-        if(bit === "1"){
-            acc.push( 8 - 1 - index);
-        }
-        return acc;
-    },[]);
-
-    //Get the result of the multiplication, by adding all the values of a * x^i
-    result = dictionary[bitsOn[0]];
-    for(let i = 1; i < bitsOn.length; i++){
-        result = Add(result,dictionary[bitsOn[i]]).split('');
-    }
-
-    return result.join('');
-        
-}
-
-
-function Multiply2(a,b){
     a = [...a];
     b = [...b];
 
@@ -350,12 +310,7 @@ class AES extends SymetricCipher{
         for(let i = 0; i < 4; i++){
             for(let j = 0; j < 4; j++){
                 for(let k = 0; k < 4; k++){
-
-                    // if(Multiply(this.MatrixForMixColumns[i][k],block[k][j]) != Multiply2(this.MatrixForMixColumns[i][k],block[k][j])){
-                    //     console.log("MatrixForMixColumns: ",this.MatrixForMixColumns[i][k]);
-                    //     console.log("Block: ",block[k][j]);
-                    // }
-                    result[i][j] = Add(result[i][j],Multiply2(this.MatrixForMixColumns[i][k],block[k][j]));
+                    result[i][j] = Add(result[i][j],Multiply(this.MatrixForMixColumns[i][k],block[k][j]));
                 }
                 result[i][j] = BinaryToHex(result[i][j]);
             }
