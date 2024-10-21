@@ -90,7 +90,7 @@ function Multiply(a,b){
 
 class AES extends SymetricCipher{
 
-    #GetSBox;
+    #GetSBoxAndMatrixForMixColumns
 
     #GetRCon;
 
@@ -98,12 +98,15 @@ class AES extends SymetricCipher{
 
     constructor(){
         super();
-        this.mustKeyLength = [128,192,256];
-        this.#GetSBox = () => {
+        this.mustKeyLength = [16,24,32];
+
+        this.#GetSBoxAndMatrixForMixColumns = () => {
             try {
-                const data = fs.readFileSync(__dirname + '/static/AESSbox.json');
-                const sBox = JSON.parse(data);  // Parsear el JSON
-                return sBox;
+                const data = fs.readFileSync(__dirname + '/static/AES.json');
+                const jsonData = JSON.parse(data);  // Parsear el JSON
+                const sBox = jsonData["sBox"];
+                const MixColumns = jsonData["MixColumns"];
+                return {sBox, MixColumns};
               } catch (err) {
                 console.error('Error leyendo el archivo:', err);
               }
@@ -317,7 +320,6 @@ class AES extends SymetricCipher{
         }
 
         return result;
-
     }
 
 
@@ -343,10 +345,9 @@ class AES extends SymetricCipher{
     CreateBlocks(input){
 
         input = this.PrepareInput(input);
-
         const sizeOfBlock = 16;
-
-        if(input % sizeOfBlock != 0){
+        
+        if(input.length % sizeOfBlock != 0){
             const paddingLength = sizeOfBlock - (input.length % sizeOfBlock);
             input = [...input, ...new Array(paddingLength).fill('00')];
         }
@@ -358,7 +359,6 @@ class AES extends SymetricCipher{
         }
 
         //But we need to transpose the blocks
-
         for(let i = 0; i < blocks.length; i++){
             blocks[i] = Transpose(blocks[i]);
         }
@@ -373,16 +373,20 @@ class AES extends SymetricCipher{
         key = this.PrepareKey(key);
         const keyLength = key.length;
 
-        if(!key.length in this.mustKeyLength){
-            return null;
+
+        if(!this.mustKeyLength.includes(keyLength)){
+            throw new Error(`Invalid key length, must be 16, 24 or 32 bytes. Not ${keyLength}`);
         }
 
+        const action = "Encrypt";
+
         try{
-        this.sBox = this.sBox || this.#GetSBox();
+            const {sBox, MixColumns} = this.#GetSBoxAndMatrixForMixColumns();
+            this.sBox = sBox[action];
+            this.MatrixForMixColumns = MixColumns[action];
         }
         catch(e){
-            console.log(e);
-            return null;
+            throw new Error("Error getting the SBox");
         }
         
         const keys = this.KeyExpansion(key);
@@ -437,7 +441,9 @@ class AES extends SymetricCipher{
     TestSubstituteBytes(){
 
         try{
-            this.sBox = this.sBox || this.#GetSBox();
+            const {sBox, MixColumns} = this.#GetSBoxAndMatrixForMixColumns();
+            this.sBox = sBox["Encrypt"];
+            this.MatrixForMixColumns = MixColumns["Encrypt"];
         }
         catch(e){
             console.log(e);
@@ -451,6 +457,15 @@ class AES extends SymetricCipher{
             ["5c","33","98","b0"],
             ["f0","2d","ad","c5"]
         ]
+
+        try{
+            const {sBox, MixColumns} = this.#GetSBoxAndMatrixForMixColumns();
+            this.sBox = sBox["Encrypt"];
+            this.MatrixForMixColumns = MixColumns["Encrypt"];
+        }
+        catch(e){
+            throw new Error("Error getting the SBox");
+        }
 
         this.#SubstituteBytes(block);
 
@@ -513,6 +528,16 @@ class AES extends SymetricCipher{
             ["a6","8c","d8","95"]
         ]
 
+        try{
+            const {sBox, MixColumns} = this.#GetSBoxAndMatrixForMixColumns();
+            this.sBox = sBox["Encrypt"];
+            this.MatrixForMixColumns = MixColumns["Encrypt"];
+        }
+        catch(e){
+            throw new Error("Error getting the matrix for MixColumns");
+            return null;
+        }
+
         let result = this.#MixColumns(block);
 
         console.log("Result: ",result);
@@ -544,16 +569,17 @@ class AES extends SymetricCipher{
 
         const keyLength = key.length;
 
-        if(!key.length in this.mustKeyLength){
-            return null;
+        if(!this.mustKeyLength.includes(keyLength)){
+            throw new Error(`Invalid key length, must be 16, 24 or 32 bytes. Not ${keyLength}`);
         }
 
         try{
-        this.sBox = this.sBox || this.#GetSBox();
+            const {sBox, MixColumns} = this.#GetSBoxAndMatrixForMixColumns();
+            this.sBox = sBox["Encrypt"];
+            this.MatrixForMixColumns = MixColumns["Encrypt"];
         }
         catch(e){
-            console.log(e);
-            return null;
+            throw new Error("Error getting the SBox");
         }
 
         const keys = this.KeyExpansion(key);
@@ -564,15 +590,106 @@ class AES extends SymetricCipher{
     }
 
 
+    #InverseShiftRows(block){ //JUST FOR A BLOCK (4x4)
+        let left = [];
+        let right = [];
+        for(let i = 3; i > 0; i--){
+            left = block[i].slice(0,4-i);
+            right = block[i].slice(4-i);
+            block[i] = [...right,...left];
+        }
+    }
+
+    #InverseSubstituteBytes(byte){ //Since we have load the sBox for Decrypt, we can use the same function
+        // Receives a byte in hex format (2 hex characters)
+        this.#SubstituteBytes(byte);
+    }
+
+    #InverseMixColumns(block){ //Since we have load the matrix for Decrypt, we can use the same function
+        return this.#MixColumns(block);
+    }
+
+
+
 
     DecryptBlock(input, subkeys) {
-        
+
+        const firstKey = subkeys[0];
+        const cipherRoundsKeys = subkeys.slice(1,subkeys.length-1).reverse();
+        const finalKey = subkeys[subkeys.length-1];
+
+        let result = this.AddRoundKey(input,finalKey);
+        for (const subkey of cipherRoundsKeys){
+            this.#InverseShiftRows(result);
+            this.#InverseSubstituteBytes(result);
+            result = this.AddRoundKey(result,subkey);
+            result = this.#InverseMixColumns(result);
+        }
+
+        this.#InverseShiftRows(result);
+        this.#InverseSubstituteBytes(result);
+        result = this.AddRoundKey(result,firstKey);
+
+        result = Transpose(result);
+        result = result.flat().join('');
+
+        result = HexToText(result,'');
+
+        return result;
+
     }
 
 
     Decrypt(input,key){
 
+        key = this.PrepareKey(key);
+
+        const keyLength = key.length;
+
+        if(!this.mustKeyLength.includes(keyLength)){
+            return null;
+        }
+
+
+        try{
+            const {sBox, MixColumns} = this.#GetSBoxAndMatrixForMixColumns();
+            this.sBox = sBox;
+            this.MatrixForMixColumns = MixColumns["Decrypt"];
+        }
+        catch(e){
+            console.log(e);
+            return null;
+        }
+
+        const sBoxDecrypt = this.sBox["Decrypt"];
+
+        const sBoxForGenerateKey = this.sBox["Encrypt"];
+
+        this.sBox = sBoxForGenerateKey;
+
+        const keys = this.KeyExpansion(key);
+
+        if(input.length % keyLength != 0){
+            return null;
+        }
+
+        this.sBox = sBoxDecrypt
+
+
+        const blocks = this.CreateBlocks(input);
+
+        let plainText = Array.from({ length: blocks.length }, undefined);
+
+        for(let i = 0; i < blocks.length; i++){
+            plainText[i] = this.DecryptBlock(blocks[i],keys);
+        }
         
+        plainText = plainText.join('');
+
+        plainText.trim();
+
+
+        return plainText;
     }
 
 }
@@ -587,8 +704,15 @@ if (require.main === module) {
 
     let myAES = new AES();
 
-    console.log(myAES.Encrypt("Springtrap is the best animatronic","HolaHolaHolaHola"));
+    text = "Springtrap is the best animatronic";
 
+    key = "HolaHolaHolaHola";
 
+    cipherText = myAES.Encrypt(text,key);
+
+    console.log(cipherText);
+
+    console.log(myAES.Decrypt(cipherText,key));
+    
 
 }

@@ -16,6 +16,8 @@ const CBC = require('./SymetricCiphers/CBC');
 
 const DES = require('./SymetricCiphers/DES');
 
+const AES = require('./SymetricCiphers/AES');
+
 class CipherMaster{
 
     constructor(){
@@ -29,6 +31,7 @@ class CipherMaster{
             'ecb': () => new ECB(),
             'cbc': () => new CBC(),
             'des': () => new DES(),
+            'aes': () => new AES()
         };
     }
 
@@ -59,8 +62,8 @@ const cipher = new CipherMaster();
     
     let text = "Springtrap is the best animatronic";
     
-    /*
-    text = `Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam congue facilisi litora ridiculus primis. Netus metus potenti malesuada donec dapibus orci, sit proin. Enim rhoncus nisi fames potenti tristique phasellus natoque ad. Conubia torquent nunc curabitur nunc nisi condimentum. Nostra augue sociosqu nibh conubia arcu condimentum. Proin odio lacinia nascetur ante dapibus interdum a posuere lacinia?
+    
+    /*text = `Lorem ipsum odor amet, consectetuer adipiscing elit. Aliquam congue facilisi litora ridiculus primis. Netus metus potenti malesuada donec dapibus orci, sit proin. Enim rhoncus nisi fames potenti tristique phasellus natoque ad. Conubia torquent nunc curabitur nunc nisi condimentum. Nostra augue sociosqu nibh conubia arcu condimentum. Proin odio lacinia nascetur ante dapibus interdum a posuere lacinia?
 Facilisi accumsan id senectus elit vivamus taciti scelerisque curae? Gravida id felis nisi nam lectus odio litora sed. Aliquet convallis dolor litora tempus natoque at. Nec nisi lacinia condimentum curabitur senectus inceptos. Leo sociosqu rhoncus risus magna ornare. Aliquet quis mauris pharetra lacus aliquam sed. Volutpat nam hendrerit molestie risus risus suspendisse. Nisl primis ac aliquet pharetra habitant.
 Purus quisque turpis ridiculus leo curabitur condimentum curabitur. Sollicitudin et lacinia nunc nulla dapibus curabitur congue pharetra. Curabitur morbi ullamcorper nulla vitae pellentesque. Dolor netus rhoncus potenti facilisis aliquet. Commodo sem praesent quisque leo himenaeos porttitor quis inceptos elit. Leo aenean magna curae urna dolor. Sit primis egestas vulputate penatibus neque suscipit. Maecenas pharetra fames porta eu facilisi gravida curae efficitur.
 Sapien dis tortor leo curae pharetra netus eleifend convallis mus? Faucibus scelerisque dis faucibus ac magna urna. Risus sagittis maecenas tincidunt porttitor sollicitudin bibendum magna id. Dictum tellus nullam penatibus vulputate suscipit senectus phasellus rutrum. Vestibulum dignissim auctor posuere odio; proin dolor parturient dis. Et metus consectetur dui tortor tristique tortor non ridiculus etiam. Vulputate nulla felis pretium sollicitudin proin rhoncus; hac magna placerat. Quisque proin fringilla pretium vitae, egestas tellus. Duis ullamcorper ipsum enim, metus senectus commodo quam sollicitudin pretium. Himenaeos in pretium torquent nisl molestie quis class dictum.
@@ -2629,7 +2632,7 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
 
     key = "daylight";
 
-    text = "Springtrap is the best animatronic";
+    //text = "Springtrap is the best animatronic";
 
     console.log(`${type.toUpperCase()} Cipher`);
 
@@ -2705,5 +2708,29 @@ Hac etiam felis nunc himenaeos vulputate varius condimentum blandit tortor. Pena
     console.log('-----------------------------------\n');
 
 
+    type = "aes"
+
+    key = "HolaHolaHolaHola";
+
+    console.log(`${type.toUpperCase()} Cipher`);
+
+    console.time(`Encryption ${type}`);
+
+    encrypted = await cipher.Encrypt(type,text,key);
+
+    console.timeEnd(`Encryption ${type}`);
+
+    console.log(encrypted);
+
+    console.time(`Decryption ${type}`);
+
+    decrypted = await cipher.Decrypt(type,encrypted,key);
+
+    console.timeEnd(`Decryption ${type}`);
+
+    console.log(decrypted);
+
+    console.log('-----------------------------------\n');
+    
     
 })();
