@@ -1,4 +1,4 @@
-const {TextToBinary, BinaryToText, TextToHex, HexToText, BinaryToHex, XOR, HexToBinary} = require('../BinaryOperations');
+const {TextToHex, HexToText, BinaryToHex, XOR, HexToBinary} = require('../BinaryOperations');
 
 const {RemoveExtraEmptySpaces} = require('../TextLib');
 
@@ -704,15 +704,30 @@ if (require.main === module) {
 
     let myAES = new AES();
 
+    /*
+
     text = "Springtrap is the best animatronic";
 
-    key = "HolaHolaHolaHola";
+    key = "thisismadeoflove";
 
     cipherText = myAES.Encrypt(text,key);
 
     console.log(cipherText);
 
     console.log(myAES.Decrypt(cipherText,key));
-    
+
+    */
+
+    text = "Odi et amo. Quare id faciam, fortasse requiris. Nescio, sed fieri sentio et excrucior."
+
+    key = "thisismadeoflove";
+
+    cipherText = myAES.Encrypt(text,key);
+
+    console.log(cipherText);
+
+    console.log(myAES.Decrypt(cipherText,key));
+
+
 
 }
